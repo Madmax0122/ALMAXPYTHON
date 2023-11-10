@@ -1,22 +1,76 @@
-/*AlmaxDesigner est une application web intuitive et extensible dédiée à la conception de balcons en 2D. L'application permet aux utilisateurs de dessiner des balcons en utilisant des formes géométriques prédéfinies ou à travers des outils de dessin manuel. Chaque élément du balcon peut être dimensionné précisément, avec une représentation à l'échelle dans le dessin 2D.
-
-## Fonctionnalités
-
-- Outils de dessin: Inclure des formes prédéfinies et des outils pour dessiner des lignes et des arcs.
-- Mesures précises: Permettre la saisie de dimensions spécifiques pour chaque côté des formes, reflétant ces mesures proportionnellement dans la vue 2D.
-- Points d'accrochage: Générer automatiquement des points de snapping pour faciliter l'alignement et la jonction des lignes.
-- Création de polygones: Assurer que les formes tracées soient fermées pour former des polygones.
-- Interface utilisateur conviviale: Concevoir une interface facile à utiliser et à comprendre pour les utilisateurs sans expérience de conception technique.
-- Architecture modulaire: Structurer le code de manière à permettre une expansion future, avec la possibilité d'ajouter de nouvelles fonctionnalités sans réécrire le code existant.
-
-## Technologies
-
-Aucune restriction sur le langage de programmation ou les bibliothèques; utilisez ce qui est le plus efficace et le plus moderne. L'application doit être compatible avec tous les navigateurs web modernes. Privilégier des solutions qui facilitent la maintenance et les mises à jour.*/
-
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof fabric !== 'undefined') {
         var canvas = new fabric.Canvas('balcony-designer');
-        // Ici, vous pouvez ajouter plus de logique pour gérer le dessin sur le canvas.
+
+        // Drawing tools
+        var lineToolEl = document.getElementById('lineTool'),
+            rectangleToolEl = document.getElementById('rectangleTool'),
+            squareToolEl = document.getElementById('squareTool');
+
+        // Current drawing tool
+        var currentTool = null;
+
+        // Handle tool selection
+        if (lineToolEl) {
+            lineToolEl.onclick = function() {
+                currentTool = 'line';
+                canvas.isDrawingMode = true;
+                canvas.freeDrawingBrush.width = 5;
+                canvas.freeDrawingBrush.color = "#000000";
+            };
+        }
+
+        if (rectangleToolEl) {
+            rectangleToolEl.onclick = function() {
+                currentTool = 'rectangle';
+            };
+        }
+
+        if (squareToolEl) {
+            squareToolEl.onclick = function() {
+                currentTool = 'square';
+            };
+        }
+
+        // Handle mouse events
+        var startPoint = null;
+        canvas.on('mouse:down', function(o) {
+            startPoint = canvas.getPointer(o.e);
+            if (currentTool === 'rectangle' || currentTool === 'square') {
+                var rect = new fabric.Rect({
+                    left: startPoint.x,
+                    top: startPoint.y,
+                    fill: 'transparent',
+                    stroke: '#000000',
+                    strokeWidth: 5,
+                    width: 1,
+                    height: 1
+                });
+                canvas.add(rect);
+                canvas.setActiveObject(rect);
+            }
+        });
+
+        canvas.on('mouse:move', function(o) {
+            if (!startPoint) return;
+            var pointer = canvas.getPointer(o.e);
+            var activeObject = canvas.getActiveObject();
+            if (currentTool === 'rectangle') {
+                activeObject.set('width', Math.abs(pointer.x - startPoint.x));
+                activeObject.set('height', Math.abs(pointer.y - startPoint.y));
+            } else if (currentTool === 'square') {
+                var size = Math.max(Math.abs(pointer.x - startPoint.x), Math.abs(pointer.y - startPoint.y));
+                activeObject.set('width', size);
+                activeObject.set('height', size);
+            }
+            activeObject.setCoords();
+            canvas.renderAll();
+        });
+
+        canvas.on('mouse:up', function(o) {
+            startPoint = null;
+        });
     } else {
+        // Handle the case where Fabric.js is not loaded.
     }
 });
